@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ignore Google OAuth secret files
+web-app/src/components/client_secret_*.json

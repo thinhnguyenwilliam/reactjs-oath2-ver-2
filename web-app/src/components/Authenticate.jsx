@@ -4,22 +4,41 @@ import { setToken } from "../services/localStorageService";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
 export default function Authenticate() {
+  //console.log('Url google callback', window.location.href);
   const navigate = useNavigate();
   const [isLoggedin, setIsLoggedin] = useState(false);
 
   useEffect(() => {
-    const accessTokenRegex = /access_token=([^&]+)/;
-    const isMatch = window.location.href.match(accessTokenRegex);
+    const accessTokenRegex = /code=([^&]+)/;
+    //console.log(`accessTokenRegex is: ${accessTokenRegex}`)
+    const isMatch = accessTokenRegex.exec(window.location.href);
+    //console.log(`isMatch is: ${isMatch}`)
 
     if (isMatch) {
-      const accessToken = isMatch[1];
+      const code = isMatch[1];
 
-      console.log("Token: ", accessToken);
-
-      setToken(accessToken);
-      setIsLoggedin(true);
+      fetch(`http://localhost:8081/identity/api/auth/outbound/authentication?code=${code}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to authenticate");
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Received token:", data.result.token);
+          setToken(data.result.token);
+          setIsLoggedin(true);
+        })
+        .catch((err) => {
+          console.error("Authentication error:", err);
+        });
     }
+
   }, []);
+
 
   useEffect(() => {
     if (isLoggedin) {
@@ -28,20 +47,18 @@ export default function Authenticate() {
   }, [isLoggedin, navigate]);
 
   return (
-    <>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection : "column",
-          gap: "30px",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress></CircularProgress>
-        <Typography>Authenticating...</Typography>
-      </Box>
-    </>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "30px",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+      }}
+    >
+      <CircularProgress></CircularProgress>
+      <Typography>Authenticating...</Typography>
+    </Box>
   );
 }
